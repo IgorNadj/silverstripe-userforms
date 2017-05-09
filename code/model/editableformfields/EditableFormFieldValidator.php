@@ -34,32 +34,6 @@ class EditableFormFieldValidator extends RequiredFields
         if (!parent::php($data)) {
             return false;
         }
-
-        // Skip unsaved records
-        if (!$this->record || !$this->record->exists()) {
-            return true;
-        }
-
-        // Skip validation if not required
-        if (empty($data['Required'])) {
-            return;
-        }
-
-        // Skip validation if no rules
-        $count = EditableCustomRule::get()->filter('ParentID', $this->record->ID)->count();
-        if ($count == 0) {
-            return true;
-        }
-
-        // Both required = true and rules > 0 should error
-        $this->validationError(
-            'Required_Error',
-            _t(
-                "EditableFormFieldValidator.REQUIRED_ERROR",
-                "Form fields cannot be required and have conditional display rules."
-            ),
-            'error'
-        );
-        return false;
+        return;
     }
 }

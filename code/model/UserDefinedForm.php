@@ -632,6 +632,9 @@ JS
      */
     public function process($data, $form)
     {
+
+    	die('yo <pre>'.print_r($data,true). ' - ' .print_r($form,true));
+
         $submittedForm = Object::create('SubmittedForm');
         $submittedForm->SubmittedByID = ($id = Member::currentUserID()) ? $id : 0;
         $submittedForm->ParentID = $this->ID;

@@ -239,16 +239,6 @@ class EditableFormField extends DataObject
      */
     protected function getDisplayRuleFields()
     {
-        // Check display rules
-        if ($this->Required) {
-            return new FieldList(
-                LabelField::create(_t(
-                    'EditableFormField.DISPLAY_RULES_DISABLED',
-                    'Display rules are not enabled for required fields. ' .
-                    'Please uncheck "Is this field Required?" under "Validation" to re-enable.'
-                ))->addExtraClass('message warning')
-            );
-        }
         $self = $this;
         $allowedClasses = array_keys($this->getEditableFieldClasses(false));
         $editableColumns = new GridFieldEditableColumns();

@@ -26,7 +26,10 @@ class UserForm extends Form
 		$fields->setForm($this);
 		$this->setActions($actions = $this->getFormActions());
 		$actions->setForm($this);
-		$this->setValidator($this->getRequiredFields());
+
+		$requiredFields = $this->getRequiredFields();
+//		$this->requiredFieldsByRules($requiredFields, $this->request->postVars());
+		$this->setValidator($requiredFields);
 
         // This needs to be re-evaluated since fields have been assigned
         $this->setupFormErrors();
@@ -47,7 +50,16 @@ class UserForm extends Form
 			$this->loadDataFrom($data);
 		}
 
+
+
 		$this->extend('updateForm');
+
+//		$err = Session::get_all();
+//		die('watd<pre> '."FormInfo.{$this->FormName()}.errors".print_r($err,true));
+
+//		die('validator <pre>'.print_r($this->getValidator(),true));
+//
+//		die('y');
 	}
 
     public function setupFormErrors()
@@ -156,6 +168,118 @@ class UserForm extends Form
 		$this->extend('updateRequiredFields', $required);
         $required->setForm($this);
 		return $required;
+	}
+
+	/**
+	 * Method will checks all required fields within post data, and check did it
+	 * need to remove field from required fields if field rules (dependencies) are negative.
+	 *
+	 * @param RequiredFields $requiredFields Set required fields
+	 * @param array          $post $_POST data
+	 *
+	 * @return bool | returns false when no post array are given and true when scripts end.
+	 */
+	public function requiredFieldsByRules(RequiredFields &$requiredFields, array $post = []) {
+		if(count($post) <= 0) return false;
+
+		foreach($requiredFields->getRequired() as $name) {
+			if(!isset($post[$name]) || empty($post[$name])) {
+				// field is required, but is not set or empty
+				// check the rules expression, maybe this field is hidden
+				if(($fields = $this->Fields()->filter('Name', $name)) && $fields->exists()) {
+					/** @var EditableFormField $field */
+					$field = $fields->first();
+					$remove = false;
+
+					foreach($field->CustomRules() as $rule) {
+						$rule = $rule->toMap();
+						$remove = (string) $rule['Display'] === 'Show' ? false : true;
+						$expectedValue = $rule['Value'];
+						$conditionFieldName = $rule['ConditionField'];
+						$postConditionFieldValue = isset($post[$conditionFieldName]) ? $post[$conditionFieldName] : '';
+						$conditionField = !empty($conditionFieldName) ? $this->Fields()->filter('Name', $conditionFieldName) : null;
+
+						if(!is_null($conditionField) && $conditionField->exists()) {
+							/** @var EditableFormField $conditionField */
+							$conditionField = $conditionField->first();
+						}
+
+						// todo: improve with radio, checkbox, and checkbox group inputs
+						switch($rule['ConditionOption']) {
+							case 'IsNotBlank':
+
+								if(empty($postConditionFieldValue)) {
+									$remove = !$remove;
+								}
+
+								break;
+							case 'IsBlank':
+
+								if(!empty($postConditionFieldValue)) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							case 'HasValue':
+
+								if($postConditionFieldValue != $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							case 'ValueLessThan':
+
+								if((float) $postConditionFieldValue >= (float) $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							case 'ValueLessThanEqual':
+
+								if((float) $postConditionFieldValue > (float) $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							case 'ValueGreaterThan':
+
+								if((float) $postConditionFieldValue <= (float) $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							case 'ValueGreaterThanEqual':
+
+								if((float) $postConditionFieldValue < (float) $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+
+							default: // ==HasNotValue
+
+								if($postConditionFieldValue == $expectedValue) {
+									$remove = !$remove;
+								}
+
+								break;
+						}
+					}
+
+					if($remove) {
+						// remove field from required fields
+						$requiredFields->removeRequiredField($name);
+					}
+				}
+			}
+		}
+
+		return true;
 	}
 
 	/**

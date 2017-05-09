@@ -61,7 +61,7 @@ jQuery(function ($) {
 			self.errorContainer.removeStepLink(fieldId);
 		});
 
-		this.$el.validate(this.validationOptions);
+		// this.$el.validate(this.validationOptions);
 
 		// Ensure checkbox groups are validated correctly
 		$('.optionset.requiredField input').each(function() {
